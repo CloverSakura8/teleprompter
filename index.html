@@ -97,7 +97,6 @@
     font-weight: 700;
     letter-spacing: -0.02em;
     margin-bottom: 4px;
-    padding-right: 100px; /* clear space for the corner Re-lock button */
   }
   .setup-sub {
     font-size: 14px;
@@ -195,23 +194,6 @@
     -webkit-appearance: none;
   }
   .start-btn:active { background: #ddd; }
-
-  .wipe-btn {
-    position: absolute;
-    top: 22px;
-    right: 20px;
-    padding: 8px 14px;
-    background: rgba(255, 107, 107, 0.08);
-    color: #FF6B6B;
-    border: 1px solid rgba(255, 107, 107, 0.3);
-    border-radius: 100px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    z-index: 5;
-    -webkit-appearance: none;
-  }
-  .wipe-btn:active { background: rgba(255, 107, 107, 0.2); }
 
   /* ============ RUNNING VIEW ============ */
   .running {
@@ -345,9 +327,8 @@
 
 <!-- ============ SETUP VIEW ============ -->
 <div class="setup" id="setupView">
-  <button class="wipe-btn" id="wipeBtn">Re-lock</button>
   <div class="setup-title">Teleprompter</div>
-  <div class="setup-sub">Tap Start. Tap the screen to pause/resume.</div>
+  <div class="setup-sub">Tap Start. Tap the screen to pause/resume. To wipe the script remotely after filming: message Yuuki "wipe teleprompter".</div>
 
   <textarea
     class="script-input"
@@ -516,7 +497,6 @@
   const mirrorToggle = document.getElementById('mirrorToggle');
   const countdownToggle = document.getElementById('countdownToggle');
   const startBtn = document.getElementById('startBtn');
-  const wipeBtn = document.getElementById('wipeBtn');
 
   const runningView = document.getElementById('runningView');
   const scriptText = document.getElementById('scriptText');
@@ -565,19 +545,6 @@
     pinView.classList.add('hidden');
     setupView.classList.add('active');
   }
-
-  function wipeAndRelock() {
-    if (!confirm('Wipe the script and re-lock?')) return;
-    state.script = '';
-    scriptInput.value = '';
-    setupView.classList.remove('active');
-    pinView.classList.remove('hidden');
-    pinInput.value = '';
-    pinError.textContent = '';
-    pinInput.focus();
-  }
-
-  wipeBtn.addEventListener('click', wipeAndRelock);
 
   // ============================================================
   // SETUP VIEW BINDINGS
