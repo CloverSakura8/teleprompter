@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Teleprompter">
+<meta name="robots" content="noindex, nofollow">
+<title>Teleprompter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+  /* ============ PIN VIEW ============ */
+  .pin-view {
+    height: 100vh; height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    gap: 24px;
+  }
+  .pin-view.hidden { display: none; }
+  .pin-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .pin-sub {
+    font-size: 14px;
+    color: #888;
+    text-align: center;
+    max-width: 320px;
+  }
+  .pin-input {
+    width: 240px;
+    background: #1A1A1A;
+    color: #fff;
+    border: 1px solid #2A2A2A;
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-size: 28px;
+    text-align: center;
+    letter-spacing: 0.5em;
+    font-family: inherit;
+    font-weight: 600;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .pin-input:focus { border-color: #555; }
+  .pin-submit {
+    width: 240px;
+    padding: 16px;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+  .pin-submit:active { background: #ddd; }
+  .pin-submit:disabled { background: #444; color: #888; }
+  .pin-error {
+    font-size: 14px;
+    color: #FF6B6B;
+    font-weight: 500;
+    min-height: 20px;
+  }
+
+  /* ============ SETUP VIEW ============ */
+  .setup {
+    height: 100vh; height: 100dvh;
+    display: none;
+    flex-direction: column;
+    padding: 24px 20px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  .setup.active { display: flex; }
+  .setup-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .setup-sub {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 8px;
+  }
+  .script-input {
+    flex: 1 1 auto;
+    min-height: 200px;
+    width: 100%;
+    background: #1A1A1A;
+    color: #fff;
+    border: 1px solid #2A2A2A;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 16px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .script-input:focus { border-color: #555; }
+
+  .control-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .control-label {
+    font-size: 14px;
+    color: #aaa;
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+  .control-value {
+    font-size: 14px;
+    color: #fff;
+    font-weight: 600;
+    min-width: 56px;
+    text-align: right;
+  }
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+  }
+  .toggle-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+  .toggle {
+    position: relative;
+    width: 52px; height: 30px;
+    background: #333;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background 200ms;
+  }
+  .toggle.on { background: #4CAF50; }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 24px; height: 24px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 200ms;
+  }
+  .toggle.on::after { transform: translateX(22px); }
+
+  .start-btn {
+    width: 100%;
+    padding: 18px;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    -webkit-appearance: none;
+  }
+  .start-btn:active { background: #ddd; }
+
+  .wipe-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: #FF6B6B;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    -webkit-appearance: none;
+  }
+  .wipe-btn:active { background: rgba(255, 107, 107, 0.1); }
+
+  /* ============ RUNNING VIEW ============ */
+  .running {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    overflow: hidden;
+  }
+  .running.active { display: block; }
+
+  .scroll-area {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .script-text {
+    position: absolute;
+    left: 0; right: 0;
+    will-change: transform;
+    padding: 100vh 32px 100vh;
+    font-size: 56px;
+    line-height: 1.4;
+    color: #fff;
+    font-weight: 600;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    letter-spacing: -0.005em;
+  }
+  .running.mirrored .script-text { transform-origin: center; }
+  .running.mirrored .scroll-area { transform: scaleX(-1); }
+
+  .reading-line {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(255, 200, 100, 0.4), transparent);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .controls {
+    position: absolute;
+    bottom: env(safe-area-inset-bottom);
+    left: 0; right: 0;
+    padding: 16px 20px 24px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: opacity 250ms;
+    z-index: 10;
+  }
+  .controls.hidden { opacity: 0; pointer-events: none; }
+
+  .ctrl-row {
+    display: flex; align-items: center;
+    gap: 10px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 14px 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    text-align: center;
+  }
+  .ctrl-btn:active { background: rgba(255,255,255,0.2); }
+  .ctrl-btn.primary { background: #fff; color: #000; border-color: #fff; }
+  .ctrl-btn.primary:active { background: #ddd; }
+
+  .status-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #aaa;
+    padding: 0 4px;
+  }
+  .status-line .indicator {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .indicator-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4CAF50;
+  }
+  .indicator-dot.paused { background: #FF9500; }
+
+  .countdown {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 240px;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(0,0,0,0.9);
+    z-index: 20;
+    letter-spacing: -0.05em;
+  }
+  .countdown.active { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- ============ PIN VIEW ============ -->
+<div class="pin-view" id="pinView">
+  <div class="pin-title">Teleprompter</div>
+  <div class="pin-sub" id="pinSub">Enter PIN to unlock the script.</div>
+  <input
+    class="pin-input"
+    type="password"
+    inputmode="numeric"
+    pattern="[0-9]*"
+    id="pinInput"
+    maxlength="16"
+    autocomplete="off"
+    autocorrect="off"
+    spellcheck="false"
+  >
+  <button class="pin-submit" id="pinSubmit">Unlock</button>
+  <div class="pin-error" id="pinError"></div>
+</div>
+
+<!-- ============ SETUP VIEW ============ -->
+<div class="setup" id="setupView">
+  <div class="setup-title">Teleprompter</div>
+  <div class="setup-sub">Tap Start. Tap the screen to pause/resume.</div>
+
+  <textarea
+    class="script-input"
+    id="scriptInput"
+    placeholder="Paste your script here…"
+    spellcheck="false"
+    autocorrect="off"
+    autocapitalize="off"
+  ></textarea>
+
+  <div class="control-row">
+    <span class="control-label">Font size</span>
+    <input type="range" id="fontSize" min="32" max="96" step="2" value="56">
+    <span class="control-value" id="fontSizeVal">56pt</span>
+  </div>
+
+  <div class="control-row">
+    <span class="control-label">Scroll speed</span>
+    <input type="range" id="scrollSpeed" min="20" max="200" step="5" value="60">
+    <span class="control-value" id="scrollSpeedVal">60</span>
+  </div>
+
+  <div class="toggle-row">
+    <span class="control-label">Mirror mode</span>
+    <div class="toggle" id="mirrorToggle" role="switch" aria-checked="false"></div>
+  </div>
+
+  <div class="toggle-row">
+    <span class="control-label">3-2-1 countdown</span>
+    <div class="toggle on" id="countdownToggle" role="switch" aria-checked="true"></div>
+  </div>
+
+  <button class="start-btn" id="startBtn">Start</button>
+  <button class="wipe-btn" id="wipeBtn">Wipe script &amp; re-lock</button>
+</div>
+
+<!-- ============ RUNNING VIEW ============ -->
+<div class="running" id="runningView">
+  <div class="scroll-area" id="scrollArea">
+    <div class="script-text" id="scriptText"></div>
+  </div>
+  <div class="reading-line"></div>
+
+  <div class="countdown" id="countdown"></div>
+
+  <div class="controls" id="controls">
+    <div class="status-line">
+      <div class="indicator">
+        <div class="indicator-dot" id="statusDot"></div>
+        <span id="statusText">Running</span>
+      </div>
+      <span id="speedReadout">60 px/s · 56pt</span>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="sizeDown">A−</button>
+      <button class="ctrl-btn" id="sizeUp">A+</button>
+      <button class="ctrl-btn" id="speedDown">Slower</button>
+      <button class="ctrl-btn" id="speedUp">Faster</button>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="resetBtn">Reset to top</button>
+      <button class="ctrl-btn primary" id="pauseBtn">Pause</button>
+      <button class="ctrl-btn" id="exitBtn">Exit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // ENCRYPTED SCRIPT BLOB
+  // ============================================================
+  // Set by the maintainer (Claude) per video. Format:
+  //   base64(salt(16 bytes) || iv(12 bytes) || ciphertext + AES-GCM auth tag)
+  // Encryption: AES-256-GCM, key derived from PIN via PBKDF2-SHA256 @ 250k iterations.
+  // If empty string, PIN gate is skipped and the setup view opens with an empty script.
+  const SCRIPT_BLOB = '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';
+  const PBKDF2_ITERATIONS = 250000;
+
+  // -------- Crypto helpers (Web Crypto API) --------
+  function base64ToBytes(b64) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  async function deriveKey(pin, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(pin), { name: 'PBKDF2' }, false, ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+  }
+
+  async function decryptScript(pin, blobBase64) {
+    const blob = base64ToBytes(blobBase64);
+    if (blob.length < 16 + 12 + 16) throw new Error('Blob too short');
+    const salt = blob.slice(0, 16);
+    const iv = blob.slice(16, 28);
+    const ciphertextWithTag = blob.slice(28);
+    const key = await deriveKey(pin, salt);
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertextWithTag
+    );
+    return new TextDecoder().decode(plaintext);
+  }
+
+  // ============================================================
+  // STATE
+  // ============================================================
+  const state = {
+    script: '',           // in-memory only; never persisted
+    fontSize: 56,
+    speed: 60,            // px / second
+    mirror: false,
+    countdown: true,
+    running: false,
+    paused: false,
+    position: 0,
+    lastTimestamp: null,
+    controlsHideTimer: null,
+  };
+
+  // -------- LocalStorage (settings only — never the script) --------
+  const STORAGE_KEY = 'tanya-teleprompter-v2';
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (saved.fontSize) state.fontSize = saved.fontSize;
+      if (saved.speed) state.speed = saved.speed;
+      if (typeof saved.mirror === 'boolean') state.mirror = saved.mirror;
+      if (typeof saved.countdown === 'boolean') state.countdown = saved.countdown;
+    } catch (e) {}
+  }
+  function saveSettings() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      fontSize: state.fontSize,
+      speed: state.speed,
+      mirror: state.mirror,
+      countdown: state.countdown,
+    }));
+  }
+
+  // ============================================================
+  // ELEMENTS
+  // ============================================================
+  const pinView = document.getElementById('pinView');
+  const pinSub = document.getElementById('pinSub');
+  const pinInput = document.getElementById('pinInput');
+  const pinSubmit = document.getElementById('pinSubmit');
+  const pinError = document.getElementById('pinError');
+
+  const setupView = document.getElementById('setupView');
+  const scriptInput = document.getElementById('scriptInput');
+  const fontSizeSlider = document.getElementById('fontSize');
+  const fontSizeVal = document.getElementById('fontSizeVal');
+  const speedSlider = document.getElementById('scrollSpeed');
+  const speedVal = document.getElementById('scrollSpeedVal');
+  const mirrorToggle = document.getElementById('mirrorToggle');
+  const countdownToggle = document.getElementById('countdownToggle');
+  const startBtn = document.getElementById('startBtn');
+  const wipeBtn = document.getElementById('wipeBtn');
+
+  const runningView = document.getElementById('runningView');
+  const scriptText = document.getElementById('scriptText');
+  const scrollArea = document.getElementById('scrollArea');
+  const countdownEl = document.getElementById('countdown');
+  const controls = document.getElementById('controls');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const speedReadout = document.getElementById('speedReadout');
+
+  // ============================================================
+  // PIN UNLOCK FLOW
+  // ============================================================
+  async function attemptUnlock() {
+    const pin = pinInput.value.trim();
+    if (!pin) {
+      pinInput.focus();
+      return;
+    }
+    pinSubmit.disabled = true;
+    pinSubmit.textContent = 'Decrypting…';
+    pinError.textContent = '';
+    try {
+      const plaintext = await decryptScript(pin, SCRIPT_BLOB);
+      enterSetup(plaintext);
+    } catch (e) {
+      pinError.textContent = 'Incorrect PIN. Try again.';
+      pinInput.value = '';
+      pinInput.focus();
+    } finally {
+      pinSubmit.disabled = false;
+      pinSubmit.textContent = 'Unlock';
+    }
+  }
+
+  pinSubmit.addEventListener('click', attemptUnlock);
+  pinInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') attemptUnlock();
+  });
+
+  function enterSetup(scriptText) {
+    state.script = scriptText;
+    scriptInput.value = scriptText;
+    pinInput.value = '';
+    pinError.textContent = '';
+    pinView.classList.add('hidden');
+    setupView.classList.add('active');
+  }
+
+  function wipeAndRelock() {
+    if (!confirm('Wipe the script and re-lock?')) return;
+    state.script = '';
+    scriptInput.value = '';
+    setupView.classList.remove('active');
+    pinView.classList.remove('hidden');
+    pinInput.value = '';
+    pinError.textContent = '';
+    pinInput.focus();
+  }
+
+  wipeBtn.addEventListener('click', wipeAndRelock);
+
+  // ============================================================
+  // SETUP VIEW BINDINGS
+  // ============================================================
+  function applySettingsToInputs() {
+    fontSizeSlider.value = state.fontSize;
+    fontSizeVal.textContent = state.fontSize + 'pt';
+    speedSlider.value = state.speed;
+    speedVal.textContent = state.speed;
+    mirrorToggle.classList.toggle('on', state.mirror);
+    countdownToggle.classList.toggle('on', state.countdown);
+  }
+
+  scriptInput.addEventListener('input', () => {
+    state.script = scriptInput.value;
+  });
+  fontSizeSlider.addEventListener('input', () => {
+    state.fontSize = parseInt(fontSizeSlider.value, 10);
+    fontSizeVal.textContent = state.fontSize + 'pt';
+    saveSettings();
+  });
+  speedSlider.addEventListener('input', () => {
+    state.speed = parseInt(speedSlider.value, 10);
+    speedVal.textContent = state.speed;
+    saveSettings();
+  });
+  mirrorToggle.addEventListener('click', () => {
+    state.mirror = !state.mirror;
+    mirrorToggle.classList.toggle('on', state.mirror);
+    saveSettings();
+  });
+  countdownToggle.addEventListener('click', () => {
+    state.countdown = !state.countdown;
+    countdownToggle.classList.toggle('on', state.countdown);
+    saveSettings();
+  });
+
+  startBtn.addEventListener('click', () => {
+    if (!state.script.trim()) {
+      scriptInput.focus();
+      return;
+    }
+    enterRunning();
+  });
+
+  // ============================================================
+  // RUNNING VIEW
+  // ============================================================
+  function enterRunning() {
+    setupView.classList.remove('active');
+    runningView.classList.add('active');
+    runningView.classList.toggle('mirrored', state.mirror);
+
+    scriptText.textContent = state.script;
+    scriptText.style.fontSize = state.fontSize + 'px';
+
+    state.position = 0;
+    scriptText.style.transform = 'translateY(0)';
+
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (e) {}
+
+    if (state.countdown) {
+      runCountdown(() => startScrolling());
+    } else {
+      startScrolling();
+    }
+    scheduleControlsHide();
+  }
+
+  function runCountdown(onDone) {
+    countdownEl.classList.add('active');
+    let n = 3;
+    countdownEl.textContent = n;
+    const interval = setInterval(() => {
+      n--;
+      if (n > 0) {
+        countdownEl.textContent = n;
+      } else {
+        clearInterval(interval);
+        countdownEl.classList.remove('active');
+        onDone();
+      }
+    }, 1000);
+  }
+
+  function startScrolling() {
+    state.running = true;
+    state.paused = false;
+    state.lastTimestamp = null;
+    statusDot.classList.remove('paused');
+    statusText.textContent = 'Running';
+    document.getElementById('pauseBtn').textContent = 'Pause';
+    requestAnimationFrame(tick);
+  }
+
+  function tick(timestamp) {
+    if (!state.running) return;
+    if (state.paused) return;
+    if (state.lastTimestamp === null) state.lastTimestamp = timestamp;
+    const dt = (timestamp - state.lastTimestamp) / 1000;
+    state.lastTimestamp = timestamp;
+    state.position += state.speed * dt;
+    scriptText.style.transform = `translateY(${-state.position}px)`;
+    requestAnimationFrame(tick);
+  }
+
+  function togglePause() {
+    if (!state.running) return;
+    state.paused = !state.paused;
+    statusDot.classList.toggle('paused', state.paused);
+    statusText.textContent = state.paused ? 'Paused' : 'Running';
+    document.getElementById('pauseBtn').textContent = state.paused ? 'Resume' : 'Pause';
+    if (!state.paused) {
+      state.lastTimestamp = null;
+      requestAnimationFrame(tick);
+    }
+  }
+
+  scrollArea.addEventListener('click', () => {
+    togglePause();
+    showControls();
+  });
+
+  document.getElementById('pauseBtn').addEventListener('click', (e) => {
+    e.stopPropagation(); togglePause(); showControls();
+  });
+  document.getElementById('resetBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.position = 0;
+    scriptText.style.transform = 'translateY(0)';
+    showControls();
+  });
+  document.getElementById('exitBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.running = false;
+    runningView.classList.remove('active');
+    setupView.classList.add('active');
+  });
+
+  document.getElementById('sizeUp').addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.fontSize = Math.min(120, state.fontSize + 4);
+    scriptText.style.fontSize = state.fontSize + 'px';
+    updateReadout(); saveSettings(); showControls();
+  });
+  document.getElementById('sizeDown').addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.fontSize = Math.max(24, state.fontSize - 4);
+    scriptText.style.fontSize = state.fontSize + 'px';
+    updateReadout(); saveSettings(); showControls();
+  });
+  document.getElementById('speedUp').addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.speed = Math.min(300, state.speed + 10);
+    updateReadout(); saveSettings(); showControls();
+  });
+  document.getElementById('speedDown').addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.speed = Math.max(10, state.speed - 10);
+    updateReadout(); saveSettings(); showControls();
+  });
+
+  function updateReadout() {
+    speedReadout.textContent = `${state.speed} px/s · ${state.fontSize}pt`;
+  }
+
+  function showControls() {
+    controls.classList.remove('hidden');
+    scheduleControlsHide();
+  }
+  function scheduleControlsHide() {
+    if (state.controlsHideTimer) clearTimeout(state.controlsHideTimer);
+    state.controlsHideTimer = setTimeout(() => {
+      if (!state.paused) controls.classList.add('hidden');
+    }, 3000);
+  }
+
+  // Prevent iOS rubber-band when scrolling text
+  document.addEventListener('touchmove', (e) => {
+    if (runningView.classList.contains('active')) e.preventDefault();
+  }, { passive: false });
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  loadSettings();
+  applySettingsToInputs();
+  updateReadout();
+
+  if (SCRIPT_BLOB) {
+    // PIN gate required — pinView shown by default
+    setTimeout(() => pinInput.focus(), 100);
+  } else {
+    // No script staged — skip PIN gate, open setup with empty script
+    pinView.classList.add('hidden');
+    setupView.classList.add('active');
+    pinSub.textContent = '';
+  }
+</script>
+</body>
+</html>
