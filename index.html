@@ -88,6 +88,8 @@
     padding: 24px 20px;
     gap: 16px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
   }
   .setup.active { display: flex; }
   .setup-title {
@@ -95,6 +97,7 @@
     font-weight: 700;
     letter-spacing: -0.02em;
     margin-bottom: 4px;
+    padding-right: 100px; /* clear space for the corner Re-lock button */
   }
   .setup-sub {
     font-size: 14px;
@@ -194,19 +197,21 @@
   .start-btn:active { background: #ddd; }
 
   .wipe-btn {
-    width: 100%;
-    padding: 14px;
-    background: transparent;
+    position: absolute;
+    top: 22px;
+    right: 20px;
+    padding: 8px 14px;
+    background: rgba(255, 107, 107, 0.08);
     color: #FF6B6B;
     border: 1px solid rgba(255, 107, 107, 0.3);
-    border-radius: 12px;
-    font-size: 14px;
+    border-radius: 100px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    margin-top: 4px;
+    z-index: 5;
     -webkit-appearance: none;
   }
-  .wipe-btn:active { background: rgba(255, 107, 107, 0.1); }
+  .wipe-btn:active { background: rgba(255, 107, 107, 0.2); }
 
   /* ============ RUNNING VIEW ============ */
   .running {
@@ -340,6 +345,7 @@
 
 <!-- ============ SETUP VIEW ============ -->
 <div class="setup" id="setupView">
+  <button class="wipe-btn" id="wipeBtn">Re-lock</button>
   <div class="setup-title">Teleprompter</div>
   <div class="setup-sub">Tap Start. Tap the screen to pause/resume.</div>
 
@@ -375,7 +381,6 @@
   </div>
 
   <button class="start-btn" id="startBtn">Start</button>
-  <button class="wipe-btn" id="wipeBtn">Wipe script &amp; re-lock</button>
 </div>
 
 <!-- ============ RUNNING VIEW ============ -->
