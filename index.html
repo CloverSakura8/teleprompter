@@ -195,6 +195,125 @@
   }
   .start-btn:active { background: #ddd; }
 
+  .wipe-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: #FF6B6B;
+    border: 1px solid rgba(255, 107, 107, 0.4);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+  .wipe-btn:active { background: rgba(255, 107, 107, 0.15); }
+  .wipe-btn:disabled { opacity: 0.5; cursor: default; }
+  .wipe-setup-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: #888;
+    border: 1px solid #2A2A2A;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+  .wipe-setup-btn:active { background: rgba(255, 255, 255, 0.05); }
+
+  /* ============ PAT MODAL ============ */
+  .pat-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 50;
+  }
+  .pat-modal.active { display: flex; }
+  .pat-modal-inner {
+    background: #1A1A1A;
+    border: 1px solid #2A2A2A;
+    border-radius: 14px;
+    padding: 24px 22px;
+    width: 100%; max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .pat-modal-title { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .pat-modal-body { font-size: 14px; color: #aaa; line-height: 1.5; }
+  .pat-modal-body code {
+    background: #2A2A2A;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #fff;
+    word-break: break-all;
+  }
+  .pat-modal-body a { color: #66B3FF; }
+  .pat-input {
+    width: 100%;
+    background: #0A0A0A;
+    color: #fff;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 14px;
+    font-family: 'SF Mono', Menlo, monospace;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .pat-input:focus { border-color: #555; }
+  .pat-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .pat-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    border: 1px solid transparent;
+  }
+  .pat-btn-cancel { background: transparent; color: #aaa; border-color: #333; }
+  .pat-btn-cancel:active { background: rgba(255,255,255,0.05); }
+  .pat-btn-save { background: #fff; color: #000; }
+  .pat-btn-save:active { background: #ddd; }
+  .pat-clear-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: #FF6B6B;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    -webkit-appearance: none;
+  }
+  .pat-modal-error {
+    font-size: 13px;
+    color: #FF6B6B;
+    min-height: 18px;
+  }
+  .pat-modal-toast {
+    font-size: 13px;
+    color: #66E08C;
+    min-height: 18px;
+  }
+
   /* ============ RUNNING VIEW ============ */
   .running {
     display: none;
@@ -328,7 +447,7 @@
 <!-- ============ SETUP VIEW ============ -->
 <div class="setup" id="setupView">
   <div class="setup-title">Teleprompter</div>
-  <div class="setup-sub">Tap Start. Tap the screen to pause/resume. To wipe the script remotely after filming: message Yuuki "wipe teleprompter".</div>
+  <div class="setup-sub">Tap Start. Tap the screen to pause/resume. Drag or scroll to course-correct the position mid-read — auto-scroll resumes after 1.5s.</div>
 
   <textarea
     class="script-input"
@@ -362,6 +481,43 @@
   </div>
 
   <button class="start-btn" id="startBtn">Start</button>
+  <button class="wipe-btn" id="wipeBtn" style="display:none">Wipe script from cloud</button>
+  <button class="wipe-setup-btn" id="wipeSetupBtn" style="display:none">Set up cloud wipe</button>
+</div>
+
+<!-- ============ PAT MODAL ============ -->
+<div class="pat-modal" id="patModal">
+  <div class="pat-modal-inner">
+    <div class="pat-modal-title">Set up cloud wipe</div>
+    <div class="pat-modal-body">
+      To wipe the script from the deployed app with one tap, paste a GitHub fine-grained Personal Access Token below.
+      <br><br>
+      <strong>Generate one at:</strong><br>
+      <code>github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</code>
+      <br><br>
+      <strong>Settings to use:</strong><br>
+      • Repository access: <strong>Only select repositories</strong> → <code>CloverSakura8/teleprompter</code><br>
+      • Repository permissions: <strong>Contents: Read and write</strong><br>
+      • Expiration: choose a long horizon (the token only works on this one repo)
+    </div>
+    <input
+      type="password"
+      class="pat-input"
+      id="patInput"
+      placeholder="github_pat_…"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+    >
+    <div class="pat-modal-error" id="patError"></div>
+    <div class="pat-modal-toast" id="patToast"></div>
+    <div class="pat-modal-actions">
+      <button class="pat-btn pat-btn-cancel" id="patCancel">Cancel</button>
+      <button class="pat-btn pat-btn-save" id="patSave">Save</button>
+    </div>
+    <button class="pat-clear-btn" id="patClear" style="display:none">Forget saved token on this device</button>
+  </div>
 </div>
 
 <!-- ============ RUNNING VIEW ============ -->
@@ -507,6 +663,16 @@
   const statusText = document.getElementById('statusText');
   const speedReadout = document.getElementById('speedReadout');
 
+  const wipeBtn = document.getElementById('wipeBtn');
+  const wipeSetupBtn = document.getElementById('wipeSetupBtn');
+  const patModal = document.getElementById('patModal');
+  const patInput = document.getElementById('patInput');
+  const patSave = document.getElementById('patSave');
+  const patCancel = document.getElementById('patCancel');
+  const patClear = document.getElementById('patClear');
+  const patError = document.getElementById('patError');
+  const patToast = document.getElementById('patToast');
+
   // ============================================================
   // PIN UNLOCK FLOW
   // ============================================================
@@ -544,6 +710,137 @@
     pinError.textContent = '';
     pinView.classList.add('hidden');
     setupView.classList.add('active');
+  }
+
+  // ============================================================
+  // CLOUD WIPE (via GitHub Contents API)
+  // ============================================================
+  // The button calls GitHub's REST API directly from the browser using a
+  // fine-grained Personal Access Token that the user pastes once and we store
+  // in localStorage on her device only. The token is scoped to the teleprompter
+  // repo and Contents:Write only — worst case is repo vandalism, no other harm.
+  const PAT_KEY = 'tanya-teleprompter-wipe-pat';
+  const WIPE_REPO_OWNER = 'CloverSakura8';
+  const WIPE_REPO_NAME = 'teleprompter';
+  const WIPE_REPO_FILE = 'index.html';
+  const WIPE_REPO_BRANCH = 'main';
+
+  function getPat() { return localStorage.getItem(PAT_KEY) || ''; }
+  function setPat(v) { localStorage.setItem(PAT_KEY, v); }
+  function clearPat() { localStorage.removeItem(PAT_KEY); }
+  function strToB64(s) { return btoa(unescape(encodeURIComponent(s))); }
+  function b64ToStr(b) { return decodeURIComponent(escape(atob(b))); }
+
+  function refreshWipeButtons() {
+    const hasPat = !!getPat();
+    wipeBtn.style.display = hasPat ? 'block' : 'none';
+    wipeSetupBtn.style.display = hasPat ? 'none' : 'block';
+    patClear.style.display = hasPat ? 'block' : 'none';
+  }
+
+  function openPatModal() {
+    patError.textContent = '';
+    patToast.textContent = '';
+    patInput.value = '';
+    patModal.classList.add('active');
+    setTimeout(() => patInput.focus(), 100);
+  }
+  function closePatModal() { patModal.classList.remove('active'); }
+
+  patCancel.addEventListener('click', closePatModal);
+  patSave.addEventListener('click', () => {
+    const pat = patInput.value.trim();
+    if (!pat) {
+      patError.textContent = 'Paste a token first.';
+      patInput.focus();
+      return;
+    }
+    setPat(pat);
+    patInput.value = '';
+    patToast.textContent = 'Saved on this device.';
+    patError.textContent = '';
+    refreshWipeButtons();
+    setTimeout(closePatModal, 800);
+  });
+  patClear.addEventListener('click', () => {
+    if (!confirm('Forget the saved wipe token on this device?')) return;
+    clearPat();
+    refreshWipeButtons();
+    patToast.textContent = 'Token forgotten.';
+    setTimeout(closePatModal, 800);
+  });
+  wipeSetupBtn.addEventListener('click', openPatModal);
+  wipeBtn.addEventListener('click', wipeRemote);
+
+  async function wipeRemote() {
+    const pat = getPat();
+    if (!pat) { openPatModal(); return; }
+    if (!confirm('Wipe the script from the deployed app? After this, the encrypted blob is gone — even with the correct PIN there will be nothing to decrypt.')) return;
+
+    wipeBtn.disabled = true;
+    wipeBtn.textContent = 'Wiping…';
+    try {
+      const apiUrl = `https://api.github.com/repos/${WIPE_REPO_OWNER}/${WIPE_REPO_NAME}/contents/${WIPE_REPO_FILE}?ref=${WIPE_REPO_BRANCH}`;
+
+      // 1. Get current file SHA + content
+      const getResp = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      });
+      if (!getResp.ok) {
+        const t = await getResp.text();
+        throw new Error(`Read failed (${getResp.status}). Check the token has Contents:Write on ${WIPE_REPO_OWNER}/${WIPE_REPO_NAME}. ${t.slice(0, 200)}`);
+      }
+      const file = await getResp.json();
+
+      // 2. Decode, replace SCRIPT_BLOB with empty
+      const currentContent = b64ToStr(file.content.replace(/\s/g, ''));
+      if (!/const SCRIPT_BLOB = '[^']*';/.test(currentContent)) {
+        throw new Error('SCRIPT_BLOB marker not found in fetched file');
+      }
+      const newContent = currentContent.replace(/const SCRIPT_BLOB = '[^']*';/, "const SCRIPT_BLOB = '';");
+      if (newContent === currentContent) {
+        throw new Error('Replacement produced identical content — nothing to wipe');
+      }
+
+      // 3. PUT updated content
+      const putResp = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        body: JSON.stringify({
+          message: 'Wipe SCRIPT_BLOB (post-filming, via app)',
+          content: strToB64(newContent),
+          sha: file.sha,
+          branch: WIPE_REPO_BRANCH
+        })
+      });
+      if (!putResp.ok) {
+        const t = await putResp.text();
+        throw new Error(`Write failed (${putResp.status}). ${t.slice(0, 200)}`);
+      }
+
+      // 4. Local cleanup — drop the in-memory script and return to PIN screen
+      state.script = '';
+      scriptInput.value = '';
+      setupView.classList.remove('active');
+      pinView.classList.remove('hidden');
+      pinInput.value = '';
+      pinError.textContent = '';
+      alert('Wiped. GitHub Pages will redeploy the empty version in ~30 seconds.');
+    } catch (e) {
+      alert('Wipe failed.\n\n' + e.message);
+    } finally {
+      wipeBtn.disabled = false;
+      wipeBtn.textContent = 'Wipe script from cloud';
+    }
   }
 
   // ============================================================
@@ -667,7 +964,91 @@
     }
   }
 
+  // ============================================================
+  // MANUAL SCROLL OVERRIDE
+  // ============================================================
+  // Wheel (mac trackpad / mouse) + touch drag (iPhone) lets the user
+  // course-correct mid-scroll. Auto-scroll pauses briefly during manual input,
+  // then resumes from the new position. The two don't fight each other.
+  const MANUAL_RESUME_MS = 1500;
+  let manualResumeTimer = null;
+  let manualWasAutoScrolling = false;
+  let touchStartY = null;
+  let touchLastY = null;
+  let touchHasMoved = false;
+  const TOUCH_MOVE_THRESHOLD = 8; // px before a finger drag counts as a scroll, not a tap
+
+  function manualScrollBegin() {
+    if (state.running && !state.paused) {
+      manualWasAutoScrolling = true;
+      state.paused = true;
+      statusDot.classList.add('paused');
+      statusText.textContent = 'Manual';
+      document.getElementById('pauseBtn').textContent = 'Resume';
+    }
+    if (manualResumeTimer) { clearTimeout(manualResumeTimer); manualResumeTimer = null; }
+  }
+  function manualScrollEnd() {
+    if (manualResumeTimer) clearTimeout(manualResumeTimer);
+    manualResumeTimer = setTimeout(() => {
+      if (manualWasAutoScrolling && state.running && state.paused) {
+        state.paused = false;
+        state.lastTimestamp = null;
+        statusDot.classList.remove('paused');
+        statusText.textContent = 'Running';
+        document.getElementById('pauseBtn').textContent = 'Pause';
+        requestAnimationFrame(tick);
+      }
+      manualWasAutoScrolling = false;
+    }, MANUAL_RESUME_MS);
+  }
+  function applyManualDelta(deltaY) {
+    state.position += deltaY;
+    if (state.position < 0) state.position = 0;
+    scriptText.style.transform = `translateY(${-state.position}px)`;
+  }
+
+  // Wheel: mac trackpad / external mouse / iPad pointer
+  scrollArea.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    manualScrollBegin();
+    applyManualDelta(e.deltaY);
+    manualScrollEnd();
+  }, { passive: false });
+
+  // Touch: iPhone drag-to-scroll
+  scrollArea.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartY = e.touches[0].clientY;
+      touchLastY = touchStartY;
+      touchHasMoved = false;
+    }
+  }, { passive: true });
+  scrollArea.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && touchStartY !== null) {
+      const currentY = e.touches[0].clientY;
+      if (Math.abs(currentY - touchStartY) > TOUCH_MOVE_THRESHOLD) {
+        if (!touchHasMoved) manualScrollBegin();
+        touchHasMoved = true;
+        e.preventDefault();
+        const stepDelta = touchLastY - currentY;
+        applyManualDelta(stepDelta);
+        touchLastY = currentY;
+      }
+    }
+  }, { passive: false });
+  scrollArea.addEventListener('touchend', () => {
+    if (touchHasMoved) manualScrollEnd();
+    touchStartY = null;
+    touchLastY = null;
+    // touchHasMoved cleared after the synthetic click would have fired so the
+    // click handler below can see whether this was a tap or a drag-scroll.
+    setTimeout(() => { touchHasMoved = false; }, 50);
+  }, { passive: true });
+
+  // Tap-to-pause (only fires for taps, not drag-scrolls)
   scrollArea.addEventListener('click', () => {
+    if (touchHasMoved) return;
     togglePause();
     showControls();
   });
@@ -726,9 +1107,12 @@
     }, 3000);
   }
 
-  // Prevent iOS rubber-band when scrolling text
+  // Prevent iOS rubber-band on areas OUTSIDE the scrollArea (the scrollArea
+  // handles its own touchmove for manual scroll above).
   document.addEventListener('touchmove', (e) => {
-    if (runningView.classList.contains('active')) e.preventDefault();
+    if (runningView.classList.contains('active') && !scrollArea.contains(e.target)) {
+      e.preventDefault();
+    }
   }, { passive: false });
 
   // ============================================================
@@ -737,6 +1121,7 @@
   loadSettings();
   applySettingsToInputs();
   updateReadout();
+  refreshWipeButtons();
 
   if (SCRIPT_BLOB) {
     // PIN gate required — pinView shown by default
